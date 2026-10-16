@@ -34,6 +34,13 @@
 
 #include <locale.h>
 
+#ifdef Py_GIL_DISABLED
+#define PYGLIB_MODULE_DECLARE_GIL(module) \
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED)
+#else
+#define PYGLIB_MODULE_DECLARE_GIL(module)
+#endif
+
 #define URI_HANDLER_PROTOCOLS_QUARK g_quark_from_static_string("__gst__uri_handler_protocols")
 #define URI_HANDLER_URITYPE_QUARK g_quark_from_static_string("__gst__uri_handler_uritype")
 
@@ -53,7 +60,10 @@ PyMODINIT_FUNC PyInit_##symbol(void);                   \
 PyMODINIT_FUNC PyInit_##symbol(void)                    \
 {                                                       \
     PyObject *module;                                   \
-    module = PyModule_Create(&_##symbol##module);
+    module = PyModule_Create(&_##symbol##module);        \
+    if (module == NULL)                                 \
+        return NULL;                                    \
+    PYGLIB_MODULE_DECLARE_GIL(module);
 #define PYGLIB_MODULE_END return module; }
 
 GST_DEBUG_CATEGORY_STATIC (python_debug);

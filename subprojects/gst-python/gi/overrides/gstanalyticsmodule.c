@@ -30,6 +30,13 @@
 
 #include <locale.h>
 
+#ifdef Py_GIL_DISABLED
+#define PYGLIB_MODULE_DECLARE_GIL(module) \
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED)
+#else
+#define PYGLIB_MODULE_DECLARE_GIL(module)
+#endif
+
 #define PYGLIB_MODULE_START(symbol, modname)	        \
     static struct PyModuleDef _##symbol##module = {     \
     PyModuleDef_HEAD_INIT,                              \
@@ -46,7 +53,10 @@ PyMODINIT_FUNC PyInit_##symbol(void);                   \
 PyMODINIT_FUNC PyInit_##symbol(void)                    \
 {                                                       \
     PyObject *module;                                   \
-    module = PyModule_Create(&_##symbol##module);
+    module = PyModule_Create(&_##symbol##module);        \
+    if (module == NULL)                                 \
+        return NULL;                                    \
+    PYGLIB_MODULE_DECLARE_GIL(module);
 #define PYGLIB_MODULE_END return module; }
 
 typedef struct
